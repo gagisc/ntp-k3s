@@ -57,3 +57,22 @@ jobs:
           else
             echo "No k8s directory found; skipping manifest dry-run."
           fi
+
+  ansible:
+    name: Ansible k3s playbook check
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ansible
+
+      - name: Ansible --version
+        run: ansible --version
+
+      - name: Syntax-check k3s playbook
+        run: ansible-playbook -i ansible/inventory.example.ini ansible/k3s.yml --syntax-check

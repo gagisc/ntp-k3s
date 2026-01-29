@@ -1,0 +1,38 @@
+---
+- name: Configure k3s NTP nodes
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Ensure apt cache is up to date (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure curl is installed (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: curl
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install k3s server if not present
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik" sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for k3s node to become Ready
+      ansible.builtin.shell: |
+        k3s kubectl wait node --all --for=condition=Ready --timeout=300s
+      register: wait_result
+      retries: 5
+      delay: 10
+      until: wait_result.rc == 0
+
+    - name: Create ntp namespace
+      ansible.builtin.shell: |
+        k3s kubectl create namespace ntp --dry-run=client -o yaml | k3s kubectl apply -f -
+
+    - name: Label all nodes as NTP servers
+      ansible.builtin.shell: |
+        k3s kubectl label node --all ntp=server --overwrite
