@@ -34,8 +34,11 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 data "aws_ami" "ubuntu_2204" {
@@ -107,7 +110,7 @@ locals {
 resource "aws_instance" "k3s_server" {
   ami                    = data.aws_ami.ubuntu_2204.id
   instance_type          = var.aws_instance_type
-  subnet_id              = data.aws_subnet_ids.default.ids[0]
+  subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.ntp_k3s.id]
   user_data              = local.aws_user_data
 
