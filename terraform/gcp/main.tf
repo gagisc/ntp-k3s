@@ -82,7 +82,7 @@ resource "google_compute_instance" "k3s_server" {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
       size  = 20
-      type  = "pd-balanced"
+      type  = "pd-standard" # standard PD aligns with GCP free tier
     }
   }
 
@@ -93,7 +93,9 @@ resource "google_compute_instance" "k3s_server" {
     access_config {}
 
     # External IPv6
-    ipv6_access_config {}
+    ipv6_access_config {
+      network_tier = "PREMIUM"
+    }
   }
 
   service_account {

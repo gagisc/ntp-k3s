@@ -19,9 +19,15 @@ variable "aws_region" {
 }
 
 variable "aws_instance_type" {
-  description = "Instance type for the k3s EC2 node. Use a free-tier eligible type where possible (e.g., t2.micro)."
+  description = "Instance type for the k3s EC2 node. Use a free-tier eligible type where possible (e.g., t2.micro or t3.micro where available)."
   type        = string
   default     = "t2.micro"
+}
+
+variable "aws_root_volume_size_gb" {
+  description = "Root EBS volume size in GB for the k3s node (keep within the 30GB free tier allowance)."
+  type        = number
+  default     = 10
 }
 
 variable "aws_key_name" {
@@ -115,6 +121,11 @@ resource "aws_instance" "k3s_server" {
   user_data              = local.aws_user_data
 
   associate_public_ip_address = true
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = var.aws_root_volume_size_gb
+  }
 
   key_name = var.aws_key_name != "" ? var.aws_key_name : null
 
